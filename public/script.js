@@ -32,19 +32,26 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
     return;
   }
 
-  const response = await fetch('/upload', {
-    method: 'POST',
-    body: formData,
-  });
+  document.querySelector('#upload-button').disabled = true;
 
-  const data = await response.json();
-  if (response.ok) {
-    const imageUrlInput = document.getElementById('image-url-input');
-    imageUrlInput.value = `![](${data.url})`;
-    document.getElementById('image-preview').innerHTML = `<img src="${data.url}" style="max-width:100%;">`;
-    document.getElementById('image-input').value = ''; // Clear file input
-  } else {
-    // alert('Upload failed.');
+  try {
+
+    const response = await fetch('/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      const imageUrlInput = document.getElementById('image-url-input');
+      imageUrlInput.value = `![](${data.url})`;
+      document.getElementById('image-preview').innerHTML = `<img src="${data.url}" style="max-width:100%;">`;
+      document.getElementById('image-input').value = ''; // Clear file input
+    } else {
+      // alert('Upload failed.');
+    }
+  } catch (error) {
+    document.querySelector('#upload-button').disabled = false;
   }
 });
 
@@ -140,50 +147,50 @@ document.getElementById('reset-button').addEventListener('click', () => {
 
 function convertSvgBlobToImage(svgBlob, outputFormat) {
   return new Promise((resolve, reject) => {
-      // Validate the output format
-      const validFormats = ['png', 'jpeg'];
-      if (!validFormats.includes(outputFormat)) {
-          outputFormat = 'png';  // Default to PNG if invalid format
-      }
+    // Validate the output format
+    const validFormats = ['png', 'jpeg'];
+    if (!validFormats.includes(outputFormat)) {
+      outputFormat = 'png';  // Default to PNG if invalid format
+    }
 
-      // Create a URL from the SVG Blob
-      const url = URL.createObjectURL(svgBlob);
+    // Create a URL from the SVG Blob
+    const url = URL.createObjectURL(svgBlob);
 
-      // Create an image element to load the SVG
-      const image = new Image();
+    // Create an image element to load the SVG
+    const image = new Image();
 
-      image.onload = () => {
-          // Set up a canvas
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
+    image.onload = () => {
+      // Set up a canvas
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
 
-          // Set canvas dimensions to the image dimensions
-          canvas.width = image.width;
-          canvas.height = image.height;
+      // Set canvas dimensions to the image dimensions
+      canvas.width = image.width;
+      canvas.height = image.height;
 
-          // Draw the image (SVG) on the canvas
-          ctx.fillStyle = '#FFFFFF'; // White background
-          ctx.drawImage(image, 0, 0);
+      // Draw the image (SVG) on the canvas
+      ctx.fillStyle = '#FFFFFF'; // White background
+      ctx.drawImage(image, 0, 0);
 
-          // Convert the canvas content to an image blob
-          canvas.toBlob((blob) => {
-              if (blob) {
-                  resolve(blob);  // Resolve the promise with the blob
-              } else {
-                  reject(new Error('Failed to convert canvas to Blob.'));
-              }
-          }, `image/${outputFormat}`);
+      // Convert the canvas content to an image blob
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);  // Resolve the promise with the blob
+        } else {
+          reject(new Error('Failed to convert canvas to Blob.'));
+        }
+      }, `image/${outputFormat}`);
 
-          // Clean up the created URL
-          URL.revokeObjectURL(url);
-      };
+      // Clean up the created URL
+      URL.revokeObjectURL(url);
+    };
 
-      image.onerror = () => {
-          reject(new Error("Error loading the SVG image."));
-          URL.revokeObjectURL(url);
-      };
+    image.onerror = () => {
+      reject(new Error("Error loading the SVG image."));
+      URL.revokeObjectURL(url);
+    };
 
-      // Start loading the image
-      image.src = url;
+    // Start loading the image
+    image.src = url;
   });
 }
