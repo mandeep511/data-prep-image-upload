@@ -1,0 +1,22 @@
+# Dependency directory
+node_modules/
+
+# Build output directory
+dist/
+
+# Environment variables
+.env
+
+# TypeScript declaration file for env variables
+env.d.ts
+
+# Yarn integrity file
+yarn.lock
+
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
