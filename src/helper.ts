@@ -23,7 +23,7 @@ export const uploadS3 = multer({
       cb(null, {fieldName: file.fieldname});
     },
     key: function (req, file, cb) {
-      cb(null, `${uuidv4()}-${file.originalname}`);
+      cb(null, `${uuidv4()}`);
     }
   })
 })
