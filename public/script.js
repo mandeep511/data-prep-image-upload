@@ -1,5 +1,5 @@
 class ImagePacker {
-  constructor(canvasId, maxSize = 2048) {
+  constructor(canvasId, maxSize = 512) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
     this.maxSize = maxSize;
@@ -35,6 +35,15 @@ class ImagePacker {
 
   async addImage(file) {
     const img = await this.loadImage(file);
+    
+    // Check image dimensions before proceeding
+    if (img.width > this.maxSize || img.height > this.maxSize) {
+      return {
+        success: false,
+        error: `Image too large. Maximum dimensions allowed are ${this.maxSize}x${this.maxSize} pixels. This image is ${img.width}x${img.height} pixels.`
+      };
+    }
+
     const position = this.findPosition(img.width, img.height);
     
     if (!position) {
@@ -186,7 +195,8 @@ document.getElementById('copy-button').addEventListener('click', () => {
 document.getElementById('image-input').addEventListener('change', async function(event) {
   if (event.target.files && event.target.files[0]) {
     const result = await packer.addImage(event.target.files[0]);
-    
+    console.log('addImage result:', result);
+
     if (result.success) {
       // Enable clear canvas button
       document.getElementById('clear-canvas').disabled = false;
