@@ -232,9 +232,9 @@ document.getElementById('image-input').addEventListener('change', async function
       document.getElementById('canvas-usage').textContent = 
         Math.round(packer.getCanvasUsage());
       
-      // Enable upload button if canvas usage is above threshold
+      // Enable upload button if there are at least 2 images
       document.getElementById('upload-canvas').disabled = 
-        packer.getCanvasUsage() < 75;
+        packer.images.size < 2;
         
       // Clear the input
       event.target.value = '';
