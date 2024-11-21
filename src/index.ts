@@ -18,6 +18,7 @@ app.post('/upload', uploadR2.single('image'), (req, res) => {
   console.log("File upload hit");
   if (req.file) {
     console.log("File available");
+    // @ts-ignore
     const url = getPublicUrl(req.file.key);
     res.send({ url });
   } else {
