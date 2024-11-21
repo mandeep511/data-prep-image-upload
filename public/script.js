@@ -7,7 +7,7 @@ function uuidv4() {
 }
 
 class ImagePacker {
-  constructor(canvasId, maxSize = 512) {
+  constructor(canvasId, maxSize = 2048) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
     this.maxSize = maxSize;
