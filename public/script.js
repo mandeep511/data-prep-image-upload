@@ -1,3 +1,11 @@
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 class ImagePacker {
   constructor(canvasId, maxSize = 512) {
     this.canvas = document.getElementById(canvasId);
@@ -270,4 +278,110 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
     fileInput.disabled = false;
     clearButton.disabled = false;
   }
+});
+
+// Add tab switching functionality
+document.querySelectorAll('.tab-btn').forEach(button => {
+  button.addEventListener('click', () => {
+    // Update active button
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    button.classList.add('active');
+    
+    // Show/hide content
+    document.querySelectorAll('.tab-content').forEach(content => {
+      content.style.display = 'none';
+    });
+    document.getElementById(button.dataset.tab === 'normal' ? 'normal-upload' : 'image-packer').style.display = 'block';
+  });
+});
+
+// Handle normal image upload
+document.getElementById('normal-upload-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const form = e.target;
+  const uploadButton = document.getElementById('normal-upload-button');
+  const fileInput = document.getElementById('normal-image-input');
+  const copyButton = document.getElementById('normal-copy-button');
+  const urlInput = document.getElementById('normal-url-input');
+  
+  if (!fileInput.files || !fileInput.files[0]) {
+    alert('Please select an image first');
+    return;
+  }
+  
+  try {
+    // Disable form and show loading state
+    form.classList.add('form-disabled');
+    uploadButton.classList.add('loading');
+    
+    const file = fileInput.files[0];
+    const fileExt = file.name.split('.').pop();
+    const uniqueFilename = `${uuidv4()}.${fileExt}`;
+    
+    const formData = new FormData();
+    const uniqueFile = new File([file], uniqueFilename, { type: file.type });
+    
+    formData.append('filepath', uniqueFilename);
+    formData.append('image', uniqueFile);
+    
+    const response = await fetch('/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      urlInput.value = data.url;
+      copyButton.disabled = false;
+      alert('Image uploaded successfully!');
+      
+      // Clear the file input
+      fileInput.value = '';
+      uploadButton.disabled = true;
+    } else {
+      throw new Error(data.error || 'Upload failed');
+    }
+  } catch (error) {
+    alert('Failed to upload image: ' + error.message);
+  } finally {
+    // Re-enable form and remove loading state
+    form.classList.remove('form-disabled');
+    uploadButton.classList.remove('loading');
+  }
+});
+
+// Preview normal image upload
+document.getElementById('normal-image-input').addEventListener('change', function(event) {
+  const preview = document.getElementById('normal-image-preview');
+  const uploadButton = document.getElementById('normal-upload-button');
+  
+  preview.innerHTML = '';
+  uploadButton.disabled = true;
+  
+  if (event.target.files && event.target.files[0]) {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(event.target.files[0]);
+    preview.appendChild(img);
+    uploadButton.disabled = false;
+  }
+});
+
+// Copy URL for normal upload
+document.getElementById('normal-copy-button').addEventListener('click', () => {
+  const copyButton = document.getElementById('normal-copy-button');
+  const copyText = document.getElementById('normal-url-input');
+  
+  copyText.select();
+  navigator.clipboard.writeText(copyText.value);
+  
+  // Show success state
+  const originalText = copyButton.textContent;
+  copyButton.textContent = 'Copied!';
+  copyButton.classList.add('success');
+  
+  setTimeout(() => {
+    copyButton.textContent = originalText;
+    copyButton.classList.remove('success');
+  }, 2000);
 });

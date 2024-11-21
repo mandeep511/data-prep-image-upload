@@ -5,33 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
   <title>Image Uploader</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>Image Packer</h1>
-    <form id="upload-form">
-      <label for="image-input" class="custom-file-upload">Choose File</label>
-      <input type="file" id="image-input" name="image" accept="image/*" hidden>
-      
-      <div class="canvas-container">
-        <canvas id="packing-canvas"></canvas>
-        <div id="hover-info" class="hover-info"></div>
-      </div>
-
-      <div class="url-container">
-        <input type="text" id="image-url-input" readonly>
-        <button id="copy-button">Copy URL</button>
-      </div>
-      
-      <div class="controls">
-        <button type="button" id="clear-canvas" disabled>Clear Canvas</button>
-        <button type="submit" id="upload-canvas" disabled>Upload Canvas</button>
-      </div>
-    </form>
+    <h1>Image Uploader</h1>
     
-    <div class="stats">
-      <p>Images packed: <span id="images-count">0</span></p>
-      <p>Canvas usage: <span id="canvas-usage">0</span>%</p>
+    <!-- Add tab buttons -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="normal">Normal Upload</button>
+      <button class="tab-btn" data-tab="packer">Image Packer</button>
+    </div>
+
+    <!-- Normal upload tab -->
+    <div class="tab-content" id="normal-upload">
+      <form id="normal-upload-form">
+        <label for="normal-image-input" class="custom-file-upload">Choose File</label>
+        <input type="file" id="normal-image-input" name="image" accept="image/*" hidden>
+        
+        <div id="normal-image-preview" class="image-preview"></div>
+
+        <div class="url-container">
+          <input type="text" id="normal-url-input" readonly placeholder="Upload an image to get URL">
+          <button type="button" id="normal-copy-button" class="copy-btn" disabled>Copy URL</button>
+        </div>
+        
+        <button type="submit" id="normal-upload-button" disabled>Upload Image</button>
+      </form>
+    </div>
+
+    <!-- Image packer tab (existing content) -->
+    <div class="tab-content" id="image-packer" style="display: none;">
+      <form id="upload-form">
+        <label for="image-input" class="custom-file-upload">Choose File</label>
+        <input type="file" id="image-input" name="image" accept="image/*" hidden>
+        
+        <div class="canvas-container">
+          <canvas id="packing-canvas"></canvas>
+          <div id="hover-info" class="hover-info"></div>
+        </div>
+
+        <div class="url-container">
+          <input type="text" id="image-url-input" readonly>
+          <button id="copy-button">Copy URL</button>
+        </div>
+        
+        <div class="controls">
+          <button type="button" id="clear-canvas" disabled>Clear Canvas</button>
+          <button type="submit" id="upload-canvas" disabled>Upload Canvas</button>
+        </div>
+      </form>
     </div>
   </div>
   <script src="script.js"></script>

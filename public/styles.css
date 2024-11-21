@@ -65,13 +65,20 @@ input[type="file"]:disabled + .custom-file-upload {
 
 input[type="text"] {
   padding: 10px;
+  padding-right: 80px; /* Make room for the copy button */
   width: 100%;
   border: 1px solid #ddd;
   border-radius: 4px;
+  background-color: #f8f8f8;
+}
+
+input[type="text"]:read-only {
+  cursor: default;
 }
 
 .url-container {
   position: relative;
+  margin: 15px 0;
 }
 
 #image-url-input {
@@ -159,6 +166,7 @@ button[type="submit"]:disabled, .btn:disabled {
 .loading {
   position: relative;
   color: transparent !important;
+  pointer-events: none;
 }
 
 .loading::after {
@@ -180,4 +188,75 @@ button[type="submit"]:disabled, .btn:disabled {
 .uploading {
   pointer-events: none;
   opacity: 0.7;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  background: #6200ea;
+  color: white;
+}
+
+.image-preview {
+  margin: 20px 0;
+  max-height: 300px;
+  overflow: hidden;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 300px;
+  height: auto;
+  object-fit: contain;
+}
+
+.copy-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  background: #6200ea;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.copy-btn:hover {
+  background: #5000c7;
+}
+
+.copy-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Add success animation for copy */
+.copy-btn.success {
+  background: #4caf50;
+}
+
+/* Add form disabled state */
+.form-disabled {
+  opacity: 0.7;
+  pointer-events: none;
 }
