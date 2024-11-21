@@ -7,7 +7,7 @@ function uuidv4() {
 }
 
 class ImagePacker {
-  constructor(canvasId, maxSize = 2048) {
+  constructor(canvasId, maxSize = 3072) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
     this.maxSize = maxSize;
@@ -39,6 +39,12 @@ class ImagePacker {
   setupEventListeners() {
     this.canvas.addEventListener('mousemove', this.handleHover.bind(this));
     this.canvas.addEventListener('click', this.handleClick.bind(this));
+    
+    // Add mouseout event listener
+    this.canvas.addEventListener('mouseout', () => {
+      const hoverInfo = document.getElementById('hover-info');
+      hoverInfo.style.display = 'none';
+    });
   }
 
   async addImage(file) {
@@ -121,18 +127,18 @@ class ImagePacker {
     const hoverInfo = document.getElementById('hover-info');
     
     if (hoveredImage) {
-      // Calculate position relative to the canvas container
-      const canvasContainer = document.querySelector('.canvas-container');
-      const containerRect = canvasContainer.getBoundingClientRect();
-      
-      // Position the tooltip relative to the mouse but within the container
-      const tooltipX = event.clientX - containerRect.left;
-      const tooltipY = event.clientY - containerRect.top;
+      const tooltipX = event.clientX;
+      const tooltipY = event.clientY;
       
       hoverInfo.style.display = 'block';
+      hoverInfo.style.position = 'fixed';
       hoverInfo.style.left = `${tooltipX}px`;
-      hoverInfo.style.top = `${tooltipY - 30}px`; // 30px above the cursor
-      hoverInfo.textContent = `${hoveredImage.name}\nClick to copy URL`;
+      hoverInfo.style.top = `${tooltipY - 30}px`;
+      
+      hoverInfo.innerHTML = `
+        <div class="url-text">${this.generateImageUrl(hoveredImage)}</div>
+        <div class="action-text">Just click to copy URL</div>
+      `;
     } else {
       hoverInfo.style.display = 'none';
     }
@@ -147,11 +153,20 @@ class ImagePacker {
     if (clickedImage) {
       const url = this.generateImageUrl(clickedImage);
       navigator.clipboard.writeText(url);
-      // Show a brief notification
+      
+      // Show a brief "Copied!" notification while maintaining the style
       const hoverInfo = document.getElementById('hover-info');
-      hoverInfo.textContent = 'URL copied!';
+      hoverInfo.innerHTML = `
+        <div class="url-text">${url}</div>
+        <div class="action-text">Copied!</div>
+      `;
+      
+      // Reset back to original text after 1 second
       setTimeout(() => {
-        hoverInfo.textContent = `${clickedImage.name}\nClick to copy URL`;
+        hoverInfo.innerHTML = `
+          <div class="url-text">${url}</div>
+          <div class="action-text">Click to copy URL</div>
+        `;
       }, 1000);
     }
   }
