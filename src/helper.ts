@@ -29,12 +29,26 @@ export const uploadR2 = multer({
     bucket: R2_BUCKET_NAME,
     acl: 'public-read',
     metadata: function (req, file, cb) {
-      cb(null, {fieldName: file.fieldname});
+      cb(null, {
+        fieldName: file.fieldname,
+        contentType: 'image/png'
+      });
     },
+    contentType: multerS3.AUTO_CONTENT_TYPE,
     key: function (req, file, cb) {
-      const fileExtension = path.extname(file.originalname);
-      const fileName = `${uuidv4()}${fileExtension}`;
-      cb(null, fileName);
+      console.log('Original file object:', file);
+      console.log('Original filename:', file.originalname);
+      
+      // Get the filepath from the request body
+      // @ts-ignore
+      const filepath = req.body.filepath || '';
+      // Construct the full key
+      const key = filepath.includes('packed_data_prep/') 
+        ? `${filepath}.png`
+        : `packed_data_prep/${filepath}.png`;
+        
+      console.log('Final key for R2:', key);
+      cb(null, key);
     }
   })
 });

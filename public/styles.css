@@ -111,3 +111,73 @@ button[type="submit"]:disabled, .btn:disabled {
   height: auto;
   border-radius: 4px;
 }
+
+.canvas-container {
+  position: relative;
+  margin: 20px 0;
+  border: 2px dashed #ddd;
+  border-radius: 4px;
+}
+
+#packing-canvas {
+  max-width: 100%;
+  height: auto;
+  cursor: pointer;
+}
+
+.hover-info {
+  display: none;
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+}
+
+.controls button {
+  flex: 1;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  color: #666;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading {
+  position: relative;
+  color: transparent !important;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Disable all controls during upload */
+.uploading {
+  pointer-events: none;
+  opacity: 0.7;
+}

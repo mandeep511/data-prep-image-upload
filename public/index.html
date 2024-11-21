@@ -8,26 +8,31 @@
 </head>
 <body>
   <div class="container">
-    <h1>Upload Image</h1>
+    <h1>Image Packer</h1>
     <form id="upload-form">
       <label for="image-input" class="custom-file-upload">Choose File</label>
-      <input type="file" id="image-input" name="image" hidden>
-      <p>OR</p>
-      <input type="text" id="svgInput" placeholder="Enter SVG Tag with src">
+      <input type="file" id="image-input" name="image" accept="image/*" hidden>
+      
+      <div class="canvas-container">
+        <canvas id="packing-canvas"></canvas>
+        <div id="hover-info" class="hover-info"></div>
+      </div>
+
       <div class="url-container">
         <input type="text" id="image-url-input" readonly>
         <button id="copy-button">Copy URL</button>
       </div>
-      <button type="submit" id="upload-button" disabled>Upload Image</button>
+      
+      <div class="controls">
+        <button type="button" id="clear-canvas" disabled>Clear Canvas</button>
+        <button type="submit" id="upload-canvas" disabled>Upload Canvas</button>
+      </div>
     </form>
-    <button id="reset-button" class="btn" disabled>Reset</button>
-    <div id="image-preview">
-
+    
+    <div class="stats">
+      <p>Images packed: <span id="images-count">0</span></p>
+      <p>Canvas usage: <span id="canvas-usage">0</span>%</p>
     </div>
-
-    <div id="svg-container"></div> <!-- Container for the SVG -->
-    <canvas id="canvas" style="display: none;"></canvas> <!-- Hidden canvas element -->
-
   </div>
   <script src="script.js"></script>
 </body>

@@ -1,41 +1,244 @@
-let svgBlob = null;
-document.getElementById('upload-button').disabled = true;
-
-document.getElementById('image-input').addEventListener('change', function (event) {
-  if (event.target.files && event.target.files[0]) {
-    // Preview image
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      document.getElementById('image-preview').innerHTML = '<img src="' + e.target.result + '" style="max-width:100%;"/>';
-    };
-    reader.readAsDataURL(event.target.files[0]);
-    // Enable the upload button and clear the SVG input
-    document.getElementById('upload-button').disabled = false;
-    document.getElementById('svgInput').value = '';
-    document.getElementById('svgInput').disabled = true;
+class ImagePacker {
+  constructor(canvasId, maxSize = 2048) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx = this.canvas.getContext('2d');
+    this.maxSize = maxSize;
+    this.images = new Map(); // Stores image positions and metadata
+    this.currentX = 0;
+    this.currentY = 0;
+    this.rowHeight = 0;
+    
+    // Generate a unique canvas ID once during initialization
+    this.canvasUUID = this.generateCanvasId();
+    console.log('Generated Canvas ID:', this.canvasUUID); // For debugging
+    
+    // Initialize canvas
+    this.canvas.width = maxSize;
+    this.canvas.height = maxSize;
+    this.ctx.fillStyle = 'transparent';
+    this.ctx.fillRect(0, 0, maxSize, maxSize);
+    
+    // Setup event listeners
+    this.setupEventListeners();
   }
 
+  generateCanvasId() {
+    // Generate a 7-digit random number
+    const randomNum = Math.floor(Math.random() * 9000000) + 1000000; // ensures 7 digits
+    return `packed_data_prep/canvas_${randomNum}`;
+  }
+
+  setupEventListeners() {
+    this.canvas.addEventListener('mousemove', this.handleHover.bind(this));
+    this.canvas.addEventListener('click', this.handleClick.bind(this));
+  }
+
+  async addImage(file) {
+    const img = await this.loadImage(file);
+    const position = this.findPosition(img.width, img.height);
+    
+    if (!position) {
+      return { success: false, error: 'Canvas is full' };
+    }
+
+    this.ctx.drawImage(img, position.x, position.y);
+    
+    const imageData = {
+      x: position.x,
+      y: position.y,
+      width: img.width,
+      height: img.height,
+      name: file.name
+    };
+    
+    this.images.set(`${position.x}-${position.y}`, imageData);
+    
+    return {
+      success: true,
+      url: this.generateImageUrl(imageData)
+    };
+  }
+
+  findPosition(width, height) {
+    if (this.currentX + width > this.maxSize) {
+      this.currentX = 0;
+      this.currentY += this.rowHeight;
+      this.rowHeight = 0;
+    }
+
+    if (this.currentY + height > this.maxSize) {
+      return null; // Canvas is full
+    }
+
+    const position = {
+      x: this.currentX,
+      y: this.currentY
+    };
+
+    this.currentX += width;
+    this.rowHeight = Math.max(this.rowHeight, height);
+
+    return position;
+  }
+
+  loadImage(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  generateImageUrl(imageData) {
+    const baseUrl = 'https://cdn.pureessence.tech/';
+    return `${baseUrl}${this.canvasUUID}.png?top_left_x=${imageData.x}&top_left_y=${imageData.y}&width=${imageData.width}&height=${imageData.height}`;
+  }
+
+  handleHover(event) {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left) * (this.canvas.width / rect.width);
+    const y = (event.clientY - rect.top) * (this.canvas.height / rect.height);
+    
+    const hoveredImage = this.findImageAtPosition(x, y);
+    const hoverInfo = document.getElementById('hover-info');
+    
+    if (hoveredImage) {
+      // Calculate position relative to the canvas container
+      const canvasContainer = document.querySelector('.canvas-container');
+      const containerRect = canvasContainer.getBoundingClientRect();
+      
+      // Position the tooltip relative to the mouse but within the container
+      const tooltipX = event.clientX - containerRect.left;
+      const tooltipY = event.clientY - containerRect.top;
+      
+      hoverInfo.style.display = 'block';
+      hoverInfo.style.left = `${tooltipX}px`;
+      hoverInfo.style.top = `${tooltipY - 30}px`; // 30px above the cursor
+      hoverInfo.textContent = `${hoveredImage.name}\nClick to copy URL`;
+    } else {
+      hoverInfo.style.display = 'none';
+    }
+  }
+
+  handleClick(event) {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left) * (this.canvas.width / rect.width);
+    const y = (event.clientY - rect.top) * (this.canvas.height / rect.height);
+    
+    const clickedImage = this.findImageAtPosition(x, y);
+    if (clickedImage) {
+      const url = this.generateImageUrl(clickedImage);
+      navigator.clipboard.writeText(url);
+      // Show a brief notification
+      const hoverInfo = document.getElementById('hover-info');
+      hoverInfo.textContent = 'URL copied!';
+      setTimeout(() => {
+        hoverInfo.textContent = `${clickedImage.name}\nClick to copy URL`;
+      }, 1000);
+    }
+  }
+
+  findImageAtPosition(x, y) {
+    for (const [_, imageData] of this.images) {
+      if (x >= imageData.x && x <= imageData.x + imageData.width &&
+          y >= imageData.y && y <= imageData.y + imageData.height) {
+        return imageData;
+      }
+    }
+    return null;
+  }
+
+  getCanvasUsage() {
+    const totalPixels = this.maxSize * this.maxSize;
+    let usedPixels = 0;
+    
+    for (const [_, imageData] of this.images) {
+      usedPixels += imageData.width * imageData.height;
+    }
+    
+    return (usedPixels / totalPixels) * 100;
+  }
+
+  async getCanvasBlob() {
+    return new Promise(resolve => {
+      this.canvas.toBlob(resolve, 'image/png', 1.0);
+    });
+  }
+}
+
+// Initialize the packer
+const packer = new ImagePacker('packing-canvas');
+
+// Clear canvas button
+document.getElementById('clear-canvas').addEventListener('click', () => {
+  location.reload(); // Simple reload to clear everything
 });
 
+// Copy button
+document.getElementById('copy-button').addEventListener('click', () => {
+  const copyText = document.getElementById('image-url-input');
+  copyText.select();
+  navigator.clipboard.writeText(copyText.value);
+});
+
+// Update the image input listener
+document.getElementById('image-input').addEventListener('change', async function(event) {
+  if (event.target.files && event.target.files[0]) {
+    const result = await packer.addImage(event.target.files[0]);
+    
+    if (result.success) {
+      // Enable clear canvas button
+      document.getElementById('clear-canvas').disabled = false;
+      
+      // Update URL input
+      document.getElementById('image-url-input').value = result.url;
+      
+      // Update stats
+      document.getElementById('images-count').textContent = packer.images.size;
+      document.getElementById('canvas-usage').textContent = 
+        Math.round(packer.getCanvasUsage());
+      
+      // Enable upload button if canvas usage is above threshold
+      document.getElementById('upload-canvas').disabled = 
+        packer.getCanvasUsage() < 75;
+        
+      // Clear the input
+      event.target.value = '';
+    } else {
+      alert(result.error);
+    }
+  }
+});
+
+// Handle canvas upload
 document.getElementById('upload-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  let formData = new FormData();
-  const imageInput = document.getElementById('image-input');
-
-  // Check if we have a selected file or an SVG blob
-  if (imageInput.files.length > 0) {
-    formData.append('image', imageInput.files[0]);
-  } else if (svgBlob) {
-    formData.append('image', svgBlob, 'uploaded.png');
-  } else {
-    // If neither input is filled, do not proceed
-    return;
-  }
-
-  document.querySelector('#upload-button').disabled = true;
-
+  
+  // Get elements
+  const uploadButton = document.getElementById('upload-canvas');
+  const form = document.getElementById('upload-form');
+  const fileInput = document.getElementById('image-input');
+  const clearButton = document.getElementById('clear-canvas');
+  
   try {
-
+    // Disable controls and show loading state
+    uploadButton.classList.add('loading');
+    form.classList.add('uploading');
+    fileInput.disabled = true;
+    clearButton.disabled = true;
+    
+    const canvasBlob = await packer.getCanvasBlob();
+    const formData = new FormData();
+    
+    // Ensure the full path is included in the filename
+    const filename = packer.canvasUUID + '.png';
+    console.log('Canvas UUID:', packer.canvasUUID);
+    console.log('Filename being sent:', filename);
+    // Add the full path as a separate field
+    formData.append('filepath', packer.canvasUUID);
+    formData.append('image', canvasBlob, filename);
+    
     const response = await fetch('/upload', {
       method: 'POST',
       body: formData,
@@ -43,154 +246,18 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
 
     const data = await response.json();
     if (response.ok) {
-      const imageUrlInput = document.getElementById('image-url-input');
-      imageUrlInput.value = `![](${data.url})`;
-      document.getElementById('image-preview').innerHTML = `<img src="${data.url}" style="max-width:100%;">`;
-      document.getElementById('image-input').value = ''; // Clear file input
+      alert('Canvas uploaded successfully!');
+      location.reload();
     } else {
-      // alert('Upload failed.');
+      throw new Error('Upload failed');
     }
   } catch (error) {
-    document.querySelector('#upload-button').disabled = false;
+    alert('Failed to upload canvas: ' + error.message);
+    
+    // Re-enable controls and remove loading state
+    uploadButton.classList.remove('loading');
+    form.classList.remove('uploading');
+    fileInput.disabled = false;
+    clearButton.disabled = false;
   }
 });
-
-document.getElementById('copy-button').addEventListener('click', () => {
-  const copyText = document.getElementById('image-url-input');
-  copyText.select();
-  document.execCommand('copy');
-  // alert('URL copied to clipboard!');
-});
-
-document.getElementById('svgInput').addEventListener('input', async function () {
-  console.log(this.value)
-  const svgInput = this.value;
-  const regex = /<img[^>]+src="([^">]+)"/g;
-  const match = regex.exec(svgInput);
-  console.log(match);
-  if (!match || !match[1]) {
-    // Hide preview if the SVG is invalid
-    document.getElementById('image-preview').innerHTML = '';
-    document.querySelector('#upload-button').disabled = true;
-    return;
-  }
-  const imgSrc = match[1];
-  // Show preview from SVG input
-  document.getElementById('image-preview').innerHTML = `<img src="${imgSrc}" style="max-width:100%;">`;
-  const dataStart = imgSrc.indexOf('base64,') + 'base64,'.length;
-  if (dataStart > 'base64,'.length - 1) {
-    const svgContent = atob(imgSrc.substring(dataStart));
-    blob_temp = new Blob([svgContent], { type: 'image/svg+xml' });
-    svgBlob = await convertSvgBlobToImage(blob_temp, 'png')
-    // Disable upload input
-    document.getElementById('image-input').value = '';
-    document.getElementById('image-input').disabled = true;
-  } else {
-    svgBlob = null;
-    // Hide preview if the SVG is invalid
-    document.getElementById('image-preview').innerHTML = '';
-    document.querySelector('.upload-button').disabled = true;
-
-  }
-});
-
-const validateSVGInput = (svgInput) => {
-  const regex = /<img[^>]+src="([^">]+)"/g;
-  const match = regex.exec(svgInput);
-  if (!match || !match[1]) {
-    return false;
-  }
-  const imgSrc = match[1];
-  const dataStart = imgSrc.indexOf('base64,') + 'base64,'.length;
-  return dataStart > 'base64,'.length - 1;
-}
-
-function toggleUploadButtonState() {
-  const svgValue = document.getElementById('svgInput').value;
-  const imageValue = document.getElementById('image-input').value;
-  const uploadButton = document.getElementById('upload-button');
-  const resetButton = document.getElementById('reset-button');
-
-  // Disable the button if both fields are empty, enable it if either field has a value
-  uploadButton.disabled = !(validateSVGInput(svgValue) || imageValue);
-  resetButton.disabled = !(validateSVGInput(svgValue) || imageValue);
-
-  if (validateSVGInput(svgValue)) {
-    document.getElementById('image-input').disabled = true;
-  } else {
-    document.getElementById('image-input').disabled = false;
-  }
-
-  // show error if the SVG input is invalid
-  if (svgValue && !validateSVGInput(svgValue)) {
-    alert('Invalid SVG input');
-  }
-}
-
-// Call this function whenever there's a change in the SVG input or the image input field
-document.getElementById('svgInput').addEventListener('input', toggleUploadButtonState);
-document.getElementById('image-input').addEventListener('change', toggleUploadButtonState);
-
-// implement reset button along with disable logic
-document.getElementById('reset-button').addEventListener('click', () => {
-  document.getElementById('image-input').value = '';
-  document.getElementById('svgInput').value = '';
-  document.getElementById('image-preview').innerHTML = '';
-  document.getElementById('image-url-input').value = '';
-  document.getElementById('upload-form').reset();
-  document.getElementById('upload-button').disabled = true;
-  document.getElementById('svgInput').disabled = false;
-  document.getElementById('image-input').disabled = false;
-  document.getElementById('reset-button').disabled = true;
-  svgBlob = null;
-});
-
-function convertSvgBlobToImage(svgBlob, outputFormat) {
-  return new Promise((resolve, reject) => {
-    // Validate the output format
-    const validFormats = ['png', 'jpeg'];
-    if (!validFormats.includes(outputFormat)) {
-      outputFormat = 'png';  // Default to PNG if invalid format
-    }
-
-    // Create a URL from the SVG Blob
-    const url = URL.createObjectURL(svgBlob);
-
-    // Create an image element to load the SVG
-    const image = new Image();
-
-    image.onload = () => {
-      // Set up a canvas
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      // Set canvas dimensions to the image dimensions
-      canvas.width = image.width;
-      canvas.height = image.height;
-
-      // Draw the image (SVG) on the canvas
-      ctx.fillStyle = '#FFFFFF'; // White background
-      ctx.drawImage(image, 0, 0);
-
-      // Convert the canvas content to an image blob
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);  // Resolve the promise with the blob
-        } else {
-          reject(new Error('Failed to convert canvas to Blob.'));
-        }
-      }, `image/${outputFormat}`);
-
-      // Clean up the created URL
-      URL.revokeObjectURL(url);
-    };
-
-    image.onerror = () => {
-      reject(new Error("Error loading the SVG image."));
-      URL.revokeObjectURL(url);
-    };
-
-    // Start loading the image
-    image.src = url;
-  });
-}
