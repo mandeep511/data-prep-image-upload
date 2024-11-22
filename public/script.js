@@ -7,7 +7,7 @@ function uuidv4() {
 }
 
 class ImagePacker {
-  constructor(canvasId, maxSize = 3072) {
+  constructor(canvasId, maxSize = 2048) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
     this.maxSize = maxSize;
@@ -227,15 +227,17 @@ document.getElementById('image-input').addEventListener('change', async function
       // Update URL input
       document.getElementById('image-url-input').value = result.url;
       
-      // Update stats
+      // **Removed**: Updating non-existent elements
+      /*
       document.getElementById('images-count').textContent = packer.images.size;
       document.getElementById('canvas-usage').textContent = 
         Math.round(packer.getCanvasUsage());
+      */
       
       // Enable upload button if there are at least 2 images
-      document.getElementById('upload-canvas').disabled = 
-        packer.images.size < 2;
-        
+      const uploadButton = document.getElementById('upload-canvas');
+      uploadButton.disabled = (packer.images.size < 2);
+      
       // Clear the input
       event.target.value = '';
     } else {
