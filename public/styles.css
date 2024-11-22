@@ -27,10 +27,10 @@ body, html {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   border-radius: 8px;
   text-align: center;
-  min-height: 100vh;
+  height: 100vh;
   flex-direction: column;
   justify-content: flex-start;
-  overflow: hidden;
+  overflow: auto;
 }
 
 p {
