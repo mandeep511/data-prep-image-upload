@@ -37,6 +37,19 @@
     <!-- Image packer tab -->
     <div class="tab-content" id="image-packer" style="display: none;">
       <form id="upload-form">
+        
+        <!-- Canvas Size Selection -->
+        <div class="canvas-size-selection">
+          <label for="canvas-size">Select Canvas Size:</label>
+          <select id="canvas-size">
+            <option value="1024">1024x1024</option>
+            <option value="2048" selected>2048x2048</option>
+            <option value="4096">4096x4096</option>
+          </select>
+          <span id="current-canvas-size">Current Size: 2048x2048</span>
+        </div>
+        <!-- End of Canvas Size Selection -->
+
         <label for="image-input" class="custom-file-upload">Choose File</label>
         <input type="file" id="image-input" name="image" accept="image/*" hidden>
         

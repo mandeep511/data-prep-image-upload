@@ -8,6 +8,7 @@ function uuidv4() {
 
 class ImagePacker {
   constructor(canvasId, maxSize = 2048) {
+    this.canvasId = canvasId;
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
     this.maxSize = maxSize;
@@ -21,13 +22,36 @@ class ImagePacker {
     console.log('Generated Canvas ID:', this.canvasUUID); // For debugging
     
     // Initialize canvas
-    this.canvas.width = maxSize;
-    this.canvas.height = maxSize;
+    this.canvas.width = this.maxSize;
+    this.canvas.height = this.maxSize;
     this.ctx.fillStyle = 'transparent';
-    this.ctx.fillRect(0, 0, maxSize, maxSize);
+    this.ctx.fillRect(0, 0, this.maxSize, this.maxSize);
     
     // Setup event listeners
     this.setupEventListeners();
+
+    // Flag to prevent size change after upload
+    this.sizeLocked = false;
+  }
+
+  setMaxSize(newSize) {
+    if (this.sizeLocked) return false;
+    this.maxSize = newSize;
+    this.canvas.width = newSize;
+    this.canvas.height = newSize;
+    this.ctx.clearRect(0, 0, newSize, newSize);
+    this.images.clear();
+    this.currentX = 0;
+    this.currentY = 0;
+    this.rowHeight = 0;
+    // Generate a new canvas UUID for the new size
+    this.canvasUUID = this.generateCanvasId();
+    console.log('New Canvas ID:', this.canvasUUID);
+    return true;
+  }
+
+  lockSize() {
+    this.sizeLocked = true;
   }
 
   generateCanvasId() {
@@ -75,6 +99,12 @@ class ImagePacker {
     };
     
     this.images.set(`${position.x}-${position.y}`, imageData);
+    
+    // Lock the canvas size after the first image is added
+    if (!this.sizeLocked) {
+      this.lockSize();
+      disableCanvasSizeSelection();
+    }
     
     return {
       success: true,
@@ -200,7 +230,40 @@ class ImagePacker {
 }
 
 // Initialize the packer
-const packer = new ImagePacker('packing-canvas');
+let packer; // Will initialize after size selection
+const defaultSize = 2048;
+
+// Initialize with default size
+packer = new ImagePacker('packing-canvas', defaultSize);
+
+// Function to disable canvas size selection
+function disableCanvasSizeSelection() {
+  const sizeDropdown = document.getElementById('canvas-size');
+  sizeDropdown.disabled = true;
+}
+
+// Function to enable canvas size selection
+function enableCanvasSizeSelection() {
+  const sizeDropdown = document.getElementById('canvas-size');
+  sizeDropdown.disabled = false;
+}
+
+// Update the current canvas size display
+function updateCanvasSizeDisplay(size) {
+  const display = document.getElementById('current-canvas-size');
+  display.textContent = `Current Size: ${size}x${size}`;
+}
+
+// Handle canvas size selection changes
+document.getElementById('canvas-size').addEventListener('change', function(event) {
+  const selectedSize = parseInt(event.target.value);
+  const success = packer.setMaxSize(selectedSize);
+  if (success) {
+    updateCanvasSizeDisplay(selectedSize);
+  } else {
+    alert('Cannot change canvas size after images have been uploaded.');
+  }
+});
 
 // Clear canvas button
 document.getElementById('clear-canvas').addEventListener('click', () => {
@@ -226,13 +289,6 @@ document.getElementById('image-input').addEventListener('change', async function
       
       // Update URL input
       document.getElementById('image-url-input').value = result.url;
-      
-      // **Removed**: Updating non-existent elements
-      /*
-      document.getElementById('images-count').textContent = packer.images.size;
-      document.getElementById('canvas-usage').textContent = 
-        Math.round(packer.getCanvasUsage());
-      */
       
       // Enable upload button if there are at least 2 images
       const uploadButton = document.getElementById('upload-canvas');
