@@ -3,7 +3,7 @@ import "dotenv/config";
 import { uploadR2, getPublicUrl } from './helper';
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5100;
 
 // Middleware
 app.use(express.static('public'));
